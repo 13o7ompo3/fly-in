@@ -27,7 +27,8 @@ class Simulator:
         self.network = network
         # Find the absolute maximum turn reached by any drone
         self.max_turns = max(
-            (drone.path[-1][0] if drone.path else 0) for drone in self.network.drones
+            (drone.path[-1][0] if drone.path else 0)
+            for drone in self.network.drones
         )
 
     def _get_entity_at_turn(self, drone: Drone, turn: int) -> Zone | Connection:
@@ -44,7 +45,7 @@ class Simulator:
         """Returns the entity's name wrapped in its designated ANSI color."""
         if isinstance(entity, Zone):
             name = entity.name
-            color = entity.color
+            color = entity.color if entity.color else "reset"
             return f"{COLORS.get(color, COLORS['reset'])}{name}{COLORS['reset']}"
 
         return f"{self._get_colored_name(entity.zone_a)}-"\
