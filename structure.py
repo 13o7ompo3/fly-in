@@ -31,8 +31,11 @@ class Zone:
 
     def __gt__(self, other: object) -> bool:
         """Defines a consistent ordering for zones in the priority queue."""
-        if not isinstance(other, Zone):
+        if not isinstance(other, Zone | Connection):
             return NotImplemented
+        if isinstance(other, Connection):
+            return ((self.name, self.name) >
+                    (other.zone_a.name, other.zone_b.name))
         return self.name > other.name
 
 
@@ -50,14 +53,18 @@ class Connection:
         return self.zone_b if zone == self.zone_a else self.zone_a
 
     def __gt__(self, other: object) -> bool:
-        if not isinstance(other, Connection):
+        if not isinstance(other, Connection | Zone):
             return NotImplemented
+        if isinstance(other, Zone):
+            return ((self.zone_a.name, self.zone_b.name) >
+                    (other.name, other.name))
         return (self.zone_a, self.zone_b) > (other.zone_a, other.zone_b)
 
 
 class Drone:
     def __init__(self, d_id: str) -> None:
         self.id = d_id
+        self.current_zone: Optional['Zone'] = None
         self.path: List[Tuple[int, Zone | Connection]] = []
         # e.g., [(1, roof1), (2, roof2)]
 

@@ -4,7 +4,7 @@ from a_star import TimeSpaceAStar, PathNotFoundException
 from simulation import Simulator
 
 
-def main():
+def main() -> None:
     if len(sys.argv) != 2:
         print("Usage: python main.py <map_file.txt>")
         sys.exit(1)
@@ -12,7 +12,7 @@ def main():
     map_file = sys.argv[1]
 
     # 1. Parse the network
-    network = Parser.parse_file(map_file)
+    network = Parser().parse_file(map_file)
 
     # 2. Run the Cooperative Time-Space A* solver
     solver = TimeSpaceAStar(network)

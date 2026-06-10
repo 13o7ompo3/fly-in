@@ -5,13 +5,15 @@ from structure import ZoneType, Zone, Connection, Drone, Network
 
 
 class Parser:
-    def __init__(self):
+    def __init__(self) -> None:
         self.network = Network()
         self.nb_drones_found = False
-        self.zone_pattern = re.compile(r"^(start_hub|end_hub|hub):\
-\s+([^\s\-]+)\s+(-?\d+)\s+(-?\d+)(?:\s+\[([^\]]*)\])?$")
-        self.conn_pattern = re.compile(r"^connection:\
-\s+([^\s\-]+)-([^\s\-]+)(?:\s+\[([^\]]*)\])?$")
+        self.zone_pattern = re.compile(r"^(start_hub|end_hub|hub):"
+                                       r"\s+([^\s\-]+)\s+(-?\d+)\s+(-?\d+)"
+                                       r"(?:\s+\[([^\]]*)\])?$")
+        self.conn_pattern = re.compile(r"^connection:"
+                                       r"\s+([^\s\-]+)-([^\s\-]+)"
+                                       r"(?:\s+\[([^\]]*)\])?$")
 
     @staticmethod
     def _parse_metadata(meta_str: Optional[str]) -> Dict[str, str]:
@@ -114,7 +116,7 @@ class Parser:
                                  f"{name1}, {name2}.")
 
             # Check for duplicates (a-b is same as b-a)
-            conn_id = tuple(sorted((name1, name2)))
+            conn_id = (name1, name2) if name1 < name2 else (name2, name1)
             if conn_id in network._seen_connections:
                 raise ValueError("Duplicate connection between "
                                  f"{name1} and {name2}.")
