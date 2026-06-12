@@ -64,17 +64,18 @@ class TimeSpaceAStar:
             return False
         end_zone = self.network.end_hub
 
-# Priority Queue: (f_score, turn, zone_name, current_zone, path, reservations)
+# Priority Queue: (f_score, priority, turn, zone_name, current_zone, path, reservations)
 # path is a list of tuples: (turn_reached, zone_or_connection)
 # the same for reservations
-        open_set: List[Tuple[float, int, str, Zone,
+        open_set: List[Tuple[int, int, int, str, Zone,
                              List[Tuple[int, Zone | Connection]],
                              List[Tuple[int, Zone | Connection]]]] = []
         start_h = self.heuristic_map.get(start_zone.name, 0)
-        heap_item: Tuple[float, int, str, Zone,
+        heap_item: Tuple[int, int, int, str, Zone,
                          List[Tuple[int, Zone | Connection]],
                          List[Tuple[int, Zone | Connection]]] = (
             start_h,
+            0,
             0,
             start_zone.name,
             start_zone,
@@ -87,7 +88,7 @@ class TimeSpaceAStar:
         closed_set: Set[Tuple[str, int]] = set()
 
         while open_set:
-            _, current_turn, _, current_zone, path, reservations = (
+            _, current_turn, priority, _, current_zone, path, reservations = (
                 heapq.heappop(open_set)
             )
             if current_zone == end_zone:
@@ -108,9 +109,13 @@ class TimeSpaceAStar:
                 h_score = self.heuristic_map.get(
                     current_zone.name, float('inf')
                 )
+                wait_priority = priority
+                if current_zone.type == ZoneType.PRIORITY:
+                    wait_priority -= 1
                 heapq.heappush(
                     open_set,
                     (next_turn + h_score, next_turn,
+                     wait_priority,
                      current_zone.name, current_zone,
                      wait_path, wait_res),
                 )
@@ -145,6 +150,7 @@ class TimeSpaceAStar:
                         heapq.heappush(
                             open_set,
                             (arrival_turn + h_score, arrival_turn,
+                             priority,
                              neighbor.name, neighbor,
                              move_path, move_res),
                         )
@@ -160,17 +166,15 @@ class TimeSpaceAStar:
                         move_res = list(reservations)
                         move_res.append((current_turn, conn))
                         move_res.append((arrival_turn, neighbor))
-                        priority_bonus = (
-                            0.5 if neighbor.type == ZoneType.PRIORITY else 0
-                        )
                         h_score = (
                             self.heuristic_map.get(neighbor.name, float('inf'))
-                            - priority_bonus
                         )
+                        if neighbor.type == ZoneType.PRIORITY:
+                            priority -= 1
                         heapq.heappush(
                             open_set,
-                            (arrival_turn + h_score, arrival_turn,
-                             neighbor.name, neighbor,
+                            (arrival_turn + h_score,
+                             arrival_turn, priority, neighbor.name, neighbor,
                              move_path, move_res),
                         )
         return False
