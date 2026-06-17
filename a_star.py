@@ -1,4 +1,5 @@
 import heapq
+import itertools
 from typing import Dict, List, Tuple, Set
 from structure import Network, Zone, Connection, ZoneType, Drone
 
@@ -27,7 +28,7 @@ class TimeSpaceAStar:
             current_zone, dist = queue.pop(0)
             for conn in self.network.graph[current_zone.name]:
                 neighbor = conn.get_opposite(current_zone)
-                cost = 2 if neighbor.type == ZoneType.RESTRICTED else 0
+                cost = 2 if current_zone.type == ZoneType.RESTRICTED else 1
                 if (neighbor.name not in heuristics or
                         heuristics[neighbor.name] > cost + dist):
                     heuristics[neighbor.name] = cost + dist
@@ -64,20 +65,26 @@ class TimeSpaceAStar:
             return False
         end_zone = self.network.end_hub
 
-# Priority Queue: (f_score, priority, turn, zone_name, current_zone, path, reservations)
+        # Unique sequence count for tie-breaking
+        tiebreaker = itertools.count()
+
+# Queue: (f_score, priority, turn, zone_name, current_zone, path, reservations)
 # path is a list of tuples: (turn_reached, zone_or_connection)
 # the same for reservations
-        open_set: List[Tuple[int, int, int, str, Zone,
+        open_set: List[Tuple[int | float, int, int | float, int,
+                             int, Zone,
                              List[Tuple[int, Zone | Connection]],
                              List[Tuple[int, Zone | Connection]]]] = []
         start_h = self.heuristic_map.get(start_zone.name, 0)
-        heap_item: Tuple[int, int, int, str, Zone,
+        heap_item: Tuple[int | float, int, int | float, int,
+                         int, Zone,
                          List[Tuple[int, Zone | Connection]],
                          List[Tuple[int, Zone | Connection]]] = (
             start_h,
             0,
+            start_h,
             0,
-            start_zone.name,
+            next(tiebreaker),
             start_zone,
             [(0, start_zone)],  # path
             [(0, start_zone)]   # reservations
@@ -88,7 +95,8 @@ class TimeSpaceAStar:
         closed_set: Set[Tuple[str, int]] = set()
 
         while open_set:
-            _, current_turn, priority, _, current_zone, path, reservations = (
+            (_, priority, _, current_turn, _,
+             current_zone, path, reservations) = (
                 heapq.heappop(open_set)
             )
             if current_zone == end_zone:
@@ -99,7 +107,6 @@ class TimeSpaceAStar:
             closed_set.add((current_zone.name, current_turn))
 
             # Option 1: Wait in the current zone
-            # We can wait if we haven't exceeded max turns
             next_turn = current_turn + 1
             if self._can_enter_zone(current_zone, next_turn):
                 wait_path = list(path)
@@ -114,9 +121,9 @@ class TimeSpaceAStar:
                     wait_priority -= 1
                 heapq.heappush(
                     open_set,
-                    (next_turn + h_score, next_turn,
-                     wait_priority,
-                     current_zone.name, current_zone,
+                    (next_turn + h_score, wait_priority,
+                     h_score, next_turn,
+                     next(tiebreaker), current_zone,
                      wait_path, wait_res),
                 )
             # Option 2: Move to adjacent zones
@@ -149,9 +156,9 @@ class TimeSpaceAStar:
                         )
                         heapq.heappush(
                             open_set,
-                            (arrival_turn + h_score, arrival_turn,
-                             priority,
-                             neighbor.name, neighbor,
+                            (arrival_turn + h_score, priority,
+                             h_score, arrival_turn,
+                             next(tiebreaker), neighbor,
                              move_path, move_res),
                         )
                 else:
@@ -169,12 +176,14 @@ class TimeSpaceAStar:
                         h_score = (
                             self.heuristic_map.get(neighbor.name, float('inf'))
                         )
+                        move_priority = priority
                         if neighbor.type == ZoneType.PRIORITY:
-                            priority -= 1
+                            move_priority -= 1
                         heapq.heappush(
                             open_set,
-                            (arrival_turn + h_score,
-                             arrival_turn, priority, neighbor.name, neighbor,
+                            (arrival_turn + h_score, move_priority,
+                             h_score, arrival_turn,
+                             next(tiebreaker), neighbor,
                              move_path, move_res),
                         )
         return False

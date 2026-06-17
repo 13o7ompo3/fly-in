@@ -14,10 +14,6 @@ class Simulator:
     def _get_entity_at_turn(self, drone: Drone, turn: int
                             ) -> Zone | Connection:
         """Retrieves exactly where a drone is at a specific turn."""
-    #    for t, entity in drone.path:
-    #        if t == turn:
-    #            return entity
-    #    return drone.path[-1][1] if drone.path else drone.current_zone
         if turn >= len(drone.path):
             turn = -1
         return drone.path[turn][1]

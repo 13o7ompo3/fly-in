@@ -23,21 +23,6 @@ class Zone:
         # {turn_number: current_occupancy_count}
         self.occupancy_schedule: Dict[int, int] = {}
 
-    def can_enter_at_turn(self, turn: int) -> bool:
-        """O(1) check if a drone can move here at a specific turn."""
-        if self.type == ZoneType.BLOCKED:
-            return False
-        return self.occupancy_schedule.get(turn, 0) < self.max_drones
-
-    def __gt__(self, other: object) -> bool:
-        """Defines a consistent ordering for zones in the priority queue."""
-        if not isinstance(other, Zone | Connection):
-            return NotImplemented
-        if isinstance(other, Connection):
-            return ((self.name, self.name) >
-                    (other.zone_a.name, other.zone_b.name))
-        return self.name > other.name
-
 
 class Connection:
     def __init__(self, zone_a: Zone, zone_b: Zone, capacity: int) -> None:
@@ -51,14 +36,6 @@ class Connection:
 
     def get_opposite(self, zone: Zone) -> Zone:
         return self.zone_b if zone == self.zone_a else self.zone_a
-
-    def __gt__(self, other: object) -> bool:
-        if not isinstance(other, Connection | Zone):
-            return NotImplemented
-        if isinstance(other, Zone):
-            return ((self.zone_a.name, self.zone_b.name) >
-                    (other.name, other.name))
-        return (self.zone_a, self.zone_b) > (other.zone_a, other.zone_b)
 
 
 class Drone:
