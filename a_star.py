@@ -1,12 +1,21 @@
 import heapq
 import itertools
-from typing import Dict, List, Tuple, Set
+from typing import Dict, List, Tuple, Set, TypeAlias
 from structure import Network, Zone, Connection, ZoneType, Drone
 
 
 class PathNotFoundException(Exception):
     """Raised when no valid path can be found for a drone."""
     pass
+
+
+# path is a list of tuples: (turn_reached, zone_or_connection)
+PathElement: TypeAlias = Zone | Connection
+Path: TypeAlias = List[Tuple[int, PathElement]]
+
+# Queue: (f_score, priority, turn, zone_name, current_zone, path, reservations)
+HeapElement: TypeAlias = Tuple[int | float, int, int | float, int,
+                               int, Zone, Path, Path]
 
 
 class TimeSpaceAStar:
@@ -68,18 +77,9 @@ class TimeSpaceAStar:
         # Unique sequence count for tie-breaking
         tiebreaker = itertools.count()
 
-# Queue: (f_score, priority, turn, zone_name, current_zone, path, reservations)
-# path is a list of tuples: (turn_reached, zone_or_connection)
-# the same for reservations
-        open_set: List[Tuple[int | float, int, int | float, int,
-                             int, Zone,
-                             List[Tuple[int, Zone | Connection]],
-                             List[Tuple[int, Zone | Connection]]]] = []
+        open_set: List[HeapElement] = []
         start_h = self.heuristic_map.get(start_zone.name, 0)
-        heap_item: Tuple[int | float, int, int | float, int,
-                         int, Zone,
-                         List[Tuple[int, Zone | Connection]],
-                         List[Tuple[int, Zone | Connection]]] = (
+        heap_item: HeapElement = (
             start_h,
             0,
             start_h,
@@ -138,8 +138,8 @@ class TimeSpaceAStar:
                 if neighbor.type == ZoneType.RESTRICTED:
                     arrival_turn = current_turn + 2
                     if (
-                        self._can_use_connection(conn, current_turn)
-                        and self._can_use_connection(conn, current_turn + 1)
+                        self._can_use_connection(conn, current_turn + 1)
+                        and self._can_use_connection(conn, arrival_turn)
                         and self._can_enter_zone(neighbor, arrival_turn)
                     ):
 
@@ -148,8 +148,8 @@ class TimeSpaceAStar:
                         move_path.append((arrival_turn, neighbor))
 
                         move_res = list(reservations)
-                        move_res.append((current_turn, conn))
                         move_res.append((current_turn + 1, conn))
+                        move_res.append((arrival_turn, conn))
                         move_res.append((arrival_turn, neighbor))
                         h_score = self.heuristic_map.get(
                             neighbor.name, float('inf')
@@ -164,14 +164,14 @@ class TimeSpaceAStar:
                 else:
                     arrival_turn = current_turn + 1
                     if (
-                        self._can_use_connection(conn, current_turn)
+                        self._can_use_connection(conn, arrival_turn)
                         and self._can_enter_zone(neighbor, arrival_turn)
                     ):
                         move_path = list(path)
                         move_path.append((arrival_turn, neighbor))
 
                         move_res = list(reservations)
-                        move_res.append((current_turn, conn))
+                        move_res.append((arrival_turn, conn))
                         move_res.append((arrival_turn, neighbor))
                         h_score = (
                             self.heuristic_map.get(neighbor.name, float('inf'))
@@ -191,8 +191,8 @@ class TimeSpaceAStar:
     def _reserve_path(
         self,
         drone: Drone,
-        path: List[Tuple[int, Zone | Connection]],
-        reservations: List[Tuple[int, Zone | Connection]],
+        path: Path,
+        reservations: Path,
     ) -> None:
         """Applies the successful path to the network's reservation tables."""
         drone.path = path
