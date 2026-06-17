@@ -43,19 +43,42 @@ Routing a massive fleet of drones through a constrained network is a classic Max
 
 To solve this and achieve mathematically optimal throughput, this engine employs a Time-Space Cooperative A* (CA*) algorithm. This advanced algorithm extends the traditional A* search by incorporating temporal dimensions, allowing it to account for both spatial and temporal constraints simultaneously. The CA* algorithm ensures that drones are routed efficiently while respecting the capacity limits of zones and connections, effectively minimizing the overall makespan of the fleet.
 
-### Time-Space Graph Modeling
+### 1. Time-Space Graph Modeling
 Instead of searching a 2D spatial graph, the network expands into a 3D Time-Space graph. Every `Zone` and `Connection` maintains a dynamic hash map representing its `occupancy_schedule` or `link_schedule` at a specific integer turn `T`.
 * **State Representation:** A node in the A* open set is not just (Zone), but (Zone, Turn).
 * **Dynamic Wait States:** If a destination is at capacity for Turn T+1, the algorithm can intelligently append a (Current_Zone, T+1) state, commanding the drone to idle until traffic clears, rather than failing the route.
 * **Restricted Transit:** For zones costing 2 turns, the solver explicitly reserves the edge Connection for both transit turns, enforcing strict physical limits on the link capacity.
 
-## Visual Representation
-The simulation provides visual feedback through a color-coded terminal log. Each line in the output represents a single simulation turn, strictly logging drone movements in the required format: `D<ID>-<destination>`.
-- `D<ID>-zone_name` for zone arrivals or `D<ID>-zone1_name-zone2_name` for edge traversals.
+### 2. Pseudo-Code Overview
+```python
+open_set.push( (start_hub, turn=0) )
 
+while open_set is not empty:
+    current_zone, current_turn = pop_lowest_f_score(open_set)
+
+    if current_zone == end_hub:
+        commit_reservations_to_global_graph()
+        return SUCCESS
+        
+    # Option 1: Wait for capacity to clear
+    if can_occupy(current_zone, current_turn + 1):
+        open_set.push( (current_zone, current_turn + 1) )
+        
+    # Option 2: Move to a neighboring zone
+    for neighbor in current_zone.connections:
+        arrival_turn = current_turn + cost(neighbor)
+        if can_traverse(connection, arrival_turn) and can_occupy(neighbor, arrival_turn):
+            open_set.push( (neighbor, arrival_turn) )
+```
+
+## Visual Representation
+The simulation provides visual feedback through a color-coded terminal log. Each line in the output represents a single simulation turn, strictly logging drone movements in the required format:
+- `D<ID>-<zone_name>` for zone arrivals.
+- `D<ID>-<zone1_name>-<zone2_name>` for in-transit edge traversals toward restricted zones.
 To make the output easy to track, destination names are dynamically highlighted using ANSI terminal colors based on the map's specific zone metadata.
 
 ## Resources
+
 ### Algorithmic & Python References
 
 - Maximum Flow over Time: A comprehensive overview of the Maximum Flow over Time problem, its mathematical formulation, and algorithmic solutions. [Wikipedia](https://en.wikipedia.org/wiki/Maximum_flow_problem)
