@@ -1,0 +1,11 @@
+nb_drones: 1
+
+start_hub: start 0 0
+hub: island_node 1 0
+end_hub: goal 5 0
+
+connection: start-island_node
+
+
+# Expected Output:
+# Error: Could not find a valid path

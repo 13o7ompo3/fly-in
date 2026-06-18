@@ -1,0 +1,109 @@
+nb_drones: 30
+
+start_hub: start 0 0
+
+# ==========================
+# LAYER 1: The Spreader
+# ==========================
+hub: a1 2 4
+hub: a2 2 2
+hub: a3 2 0
+hub: a4 2 -2
+hub: a5 2 -4
+
+# ==========================
+# LAYER 2: The Staging Area
+# ==========================
+hub: b1 4 4
+hub: b2 4 2
+hub: b3 4 0
+hub: b4 4 -2
+hub: b5 4 -4
+
+# ==========================
+# LAYER 3: THE MEAT GRINDER (5 zones funneling to 1)
+# ==========================
+hub: meat_grinder 6 0 [zone=restricted max_drones=2]
+
+# ==========================
+# LAYER 4: Post-Grinder Expansion
+# ==========================
+hub: c1 8 3
+hub: c2 8 1
+hub: c3 8 -1
+hub: c4 8 -3
+
+# ==========================
+# LAYER 5: THE NEEDLE (4 zones funneling to 1)
+# ==========================
+hub: needle 10 0 [max_drones=1]
+
+# ==========================
+# LAYER 6: The End
+# ==========================
+end_hub: end 12 0
+
+# ==========================
+# PRESSURE RELIEF DETOURS (Very long, but avoids traffic)
+# ==========================
+# Top Detour (Avoids Meat Grinder, drops in at Layer 4)
+hub: top_d1 4 7
+hub: top_d2 6 7
+hub: top_d3 8 7
+
+# Bottom Detour (Avoids The Needle, goes straight to end)
+hub: bot_d1 6 -7
+hub: bot_d2 8 -7
+hub: bot_d3 10 -7
+
+# ==========================
+# CONNECTIONS
+# ==========================
+
+# Start -> Layer 1
+connection: start-a1
+connection: start-a2
+connection: start-a3
+connection: start-a4
+connection: start-a5
+
+# Layer 1 -> Layer 2
+connection: a1-b1
+connection: a2-b2
+connection: a3-b3
+connection: a4-b4
+connection: a5-b5
+
+# Layer 1 -> Top Detour
+connection: a1-top_d1
+connection: top_d1-top_d2
+connection: top_d2-top_d3
+connection: top_d3-c1
+
+# Layer 2 -> MEAT GRINDER (The 5-to-1 Trap)
+connection: b1-meat_grinder [max_link_capacity=1]
+connection: b2-meat_grinder [max_link_capacity=1]
+connection: b3-meat_grinder [max_link_capacity=1]
+connection: b4-meat_grinder [max_link_capacity=1]
+connection: b5-meat_grinder [max_link_capacity=1]
+
+# Meat Grinder -> Layer 4
+connection: meat_grinder-c1
+connection: meat_grinder-c2
+connection: meat_grinder-c3
+connection: meat_grinder-c4
+
+# Layer 4 -> Bottom Detour
+connection: c4-bot_d1
+connection: bot_d1-bot_d2
+connection: bot_d2-bot_d3
+connection: bot_d3-end
+
+# Layer 4 -> THE NEEDLE (The 4-to-1 Trap)
+connection: c1-needle [max_link_capacity=1]
+connection: c2-needle [max_link_capacity=1]
+connection: c3-needle [max_link_capacity=1]
+connection: c4-needle [max_link_capacity=1]
+
+# Needle -> End
+connection: needle-end

@@ -1,0 +1,101 @@
+nb_drones: 50
+
+start_hub: start 0 10 [color=green]
+
+# ==========================================
+# THE CORE PIPELINE (Extremely slow, but shortest distance)
+# ==========================================
+hub: c1 4 10 [zone=restricted max_drones=1 color=red]
+hub: c2 8 10 [zone=restricted max_drones=1 color=red]
+hub: c3 12 10 [zone=restricted max_drones=1 color=red]
+hub: c4 16 10 [zone=restricted max_drones=1 color=red]
+
+# ==========================================
+# INNER RING (The Roach Motels & Priority Baits)
+# ==========================================
+# Top Inner
+hub: t1 4 14 [max_drones=10 color=orange]
+hub: t2 10 14 [zone=priority max_drones=1 color=yellow]
+hub: t3 16 14 [max_drones=10 color=orange]
+
+# Bottom Inner
+hub: b1 4 6 [max_drones=10 color=orange]
+hub: b2 10 6 [zone=priority max_drones=1 color=yellow]
+hub: b3 16 6 [max_drones=10 color=orange]
+
+# ==========================================
+# OUTER HIGHWAYS (Very long, unlimited capacity)
+# ==========================================
+# Top Outer Arc
+hub: o_t1 2 18 [color=blue]
+hub: o_t2 6 20 [color=blue]
+hub: o_t3 10 20 [color=blue]
+hub: o_t4 14 20 [color=blue]
+hub: o_t5 18 18 [color=blue]
+
+# Bottom Outer Arc
+hub: o_b1 2 2 [color=blue]
+hub: o_b2 6 0 [color=blue]
+hub: o_b3 10 0 [color=blue]
+hub: o_b4 14 0 [color=blue]
+hub: o_b5 18 2 [color=blue]
+
+end_hub: goal 20 10 [color=green]
+
+# ==========================================
+# CONNECTIONS
+# ==========================================
+
+# Start expansions (3 choices)
+connection: start-c1 [max_link_capacity=1]
+connection: start-t1
+connection: start-b1
+connection: start-o_t1
+connection: start-o_b1
+
+# The Core Pipeline (Brutal bottleneck)
+connection: c1-c2 [max_link_capacity=1]
+connection: c2-c3 [max_link_capacity=1]
+connection: c3-c4 [max_link_capacity=1]
+connection: c4-goal [max_link_capacity=1]
+
+# Top Inner Ring
+connection: t1-t2 [max_link_capacity=1]
+connection: t2-t3 [max_link_capacity=1]
+connection: t3-goal
+
+# Bottom Inner Ring
+connection: b1-b2 [max_link_capacity=1]
+connection: b2-b3 [max_link_capacity=1]
+connection: b3-goal
+
+# Top Outer Highway
+connection: o_t1-o_t2
+connection: o_t2-o_t3
+connection: o_t3-o_t4
+connection: o_t4-o_t5
+connection: o_t5-goal
+
+# Bottom Outer Highway
+connection: o_b1-o_b2
+connection: o_b2-o_b3
+connection: o_b3-o_b4
+connection: o_b4-o_b5
+connection: o_b5-goal
+
+# ==========================================
+# CHAOS INJECTORS (Cross-Traffic Links)
+# ==========================================
+# Drones trapped in t1/b1 can try to squeeze into the Core
+connection: t1-c2 [max_link_capacity=1]
+connection: b1-c2 [max_link_capacity=1]
+
+# Drones escaping the core can jump to the outer holding pens
+connection: c3-t3
+connection: c3-b3
+
+# Bailout routes from the holding pens to the Outer Highways
+connection: t1-o_t2
+connection: t3-o_t4
+connection: b1-o_b2
+connection: b3-o_b4

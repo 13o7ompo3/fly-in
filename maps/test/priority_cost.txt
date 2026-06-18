@@ -1,0 +1,59 @@
+nb_drones: 1
+
+start_hub: start 0 0 [color=green]
+
+hub: waypoint1 1 0 [color=blue]
+hub: waypoint2 2 0 [color=blue]
+hub: waypoint3 3 0 [color=blue]
+hub: waypoint4 4 0 [color=blue]
+hub: waypoint5 5 0 [color=blue]
+hub: waypoint6 6 0 [color=blue]
+hub: waypoint7 7 0 [color=blue]
+hub: waypoint8 8 0 [color=blue]
+hub: waypoint9 9 0 [color=blue]
+hub: waypoint10 10 0 [color=blue]
+hub: waypoint11 11 0 [color=blue]
+
+hub: priority1 1 1 [color=yellow zone=priority]
+hub: priority2 2 1 [color=yellow zone=priority]
+hub: priority3 3 1 [color=yellow zone=priority]
+hub: priority4 4 1 [color=yellow zone=priority]
+hub: priority5 5 1 [color=yellow zone=priority]
+hub: priority6 6 1 [color=yellow zone=priority]
+hub: priority7 7 1 [color=yellow zone=priority]
+hub: priority8 8 1 [color=yellow zone=priority]
+hub: priority9 9 1 [color=yellow zone=priority]
+hub: priority10 10 1 [color=yellow zone=priority]
+hub: priority11 11 1 [color=yellow zone=priority]
+hub: priority12 12 1 [color=yellow zone=priority]
+
+end_hub: goal 12 0 [color=red]
+
+connection: start-waypoint1
+connection: start-priority1
+
+connection: waypoint1-waypoint2
+connection: waypoint2-waypoint3
+connection: waypoint3-waypoint4
+connection: waypoint4-waypoint5
+connection: waypoint5-waypoint6
+connection: waypoint6-waypoint7
+connection: waypoint7-waypoint8
+connection: waypoint8-waypoint9
+connection: waypoint9-waypoint10
+connection: waypoint10-waypoint11
+
+connection: priority1-priority2
+connection: priority2-priority3
+connection: priority3-priority4
+connection: priority4-priority5
+connection: priority5-priority6
+connection: priority6-priority7
+connection: priority7-priority8
+connection: priority8-priority9
+connection: priority9-priority10
+connection: priority10-priority11
+connection: priority11-priority12
+
+connection: waypoint11-goal
+connection: priority12-goal

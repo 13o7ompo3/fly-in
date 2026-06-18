@@ -1,0 +1,89 @@
+nb_drones: 100
+
+start_hub: start 10 20 [color=green]
+
+# ==========================================
+# THE FUNNEL (Splitting the flow)
+# ==========================================
+hub: split_L 4 18 [color=blue]
+hub: split_C 10 18 [color=red]
+hub: split_R 16 18 [color=blue]
+
+# ==========================================
+# THE OUTER HIGHWAYS (Safe, unlimited capacity, but very long)
+# ==========================================
+# Left Highway
+hub: L1 2 15 [color=blue]
+hub: L2 2 10 [color=blue]
+hub: L3 2 5 [color=blue]
+
+# Right Highway
+hub: R1 18 15 [color=blue]
+hub: R2 18 10 [color=blue]
+hub: R3 18 5 [color=blue]
+
+# ==========================================
+# THE TOXIC SHORTCUT (Braess's Trap)
+# Straightest line, tagged Priority, but Restricted and Capacity=1
+# ==========================================
+hub: C1 10 15 [zone=restricted max_drones=1 color=yellow]
+hub: C2 10 10 [zone=restricted max_drones=1 color=yellow]
+hub: C3 10 5 [zone=restricted max_drones=1 color=yellow]
+
+# ==========================================
+# THE BOTTLENECK ROOM (Multi-Agent Path Finding Trap)
+# All paths must merge into a single tight doorway
+# ==========================================
+hub: merge_L 6 2 [color=orange]
+hub: merge_C 10 2 [color=orange]
+hub: merge_R 14 2 [color=orange]
+
+hub: final_gate 10 0 [zone=restricted max_drones=3 color=red]
+
+end_hub: end 10 -2 [color=green]
+
+# ==========================================
+# CONNECTIONS
+# ==========================================
+
+# Start to Funnel
+connection: start-split_L
+connection: start-split_C
+connection: start-split_R
+
+# Left Highway Routing
+connection: split_L-L1
+connection: L1-L2
+connection: L2-L3
+connection: L3-merge_L
+
+# Right Highway Routing
+connection: split_R-R1
+connection: R1-R2
+connection: R2-R3
+connection: R3-merge_R
+
+# The Toxic Shortcut (Straight down the middle)
+connection: split_C-C1 [max_link_capacity=1]
+connection: C1-C2 [max_link_capacity=1]
+connection: C2-C3 [max_link_capacity=1]
+connection: C3-merge_C [max_link_capacity=1]
+
+# ==========================================
+# THE EDMONDS-KARP CROSSOVERS
+# Tempting drones to switch lanes and cause cross-traffic gridlock
+# ==========================================
+connection: L1-C2 [max_link_capacity=1]
+connection: R1-C2 [max_link_capacity=1]
+
+connection: L2-C3 [max_link_capacity=1]
+connection: R2-C3 [max_link_capacity=1]
+
+# ==========================================
+# FINAL MERGE TO THE GOAL
+# ==========================================
+connection: merge_L-final_gate
+connection: merge_C-final_gate
+connection: merge_R-final_gate
+
+connection: final_gate-end
