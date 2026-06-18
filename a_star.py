@@ -78,7 +78,9 @@ class TimeSpaceAStar:
         tiebreaker = itertools.count()
 
         open_set: List[HeapElement] = []
-        start_h = self.heuristic_map.get(start_zone.name, 0)
+        start_h = self.heuristic_map.get(start_zone.name, float('inf'))
+        if start_h == float('inf'):
+            return False  # No valid path found
         heap_item: HeapElement = (
             start_h,
             0,
