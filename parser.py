@@ -55,7 +55,9 @@ class Parser:
             if self.nb_drones_found:
                 raise ValueError("Multiple nb_drones definitions found.")
             self.nb_drones_found = True
-
+        elif self.nb_drones_found is False:
+            raise ValueError("nb_drones must be defined before "
+                             "zones and connections.")
         # 3. Parse Zones
         elif line.startswith(("start_hub:", "end_hub:", "hub:")):
             match = self.zone_pattern.match(line)
