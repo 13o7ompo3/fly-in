@@ -10,10 +10,10 @@ class Parser:
         self.nb_drones_found = False
         self.zone_pattern = re.compile(r"^(start_hub|end_hub|hub):"
                                        r"\s+([^\s\-]+)\s+(-?\d+)\s+(-?\d+)"
-                                       r"(?:\s+\[([^\]]*)\])?$")
+                                       r"(?:\s+\[([^\]]+)\])?$")
         self.conn_pattern = re.compile(r"^connection:"
                                        r"\s+([^\s\-]+)-([^\s\-]+)"
-                                       r"(?:\s+\[([^\]]*)\])?$")
+                                       r"(?:\s+\[([^\]]+)\])?$")
 
     @staticmethod
     def _parse_metadata(meta_str: Optional[str]) -> Dict[str, str]:
@@ -24,9 +24,16 @@ class Parser:
 
         # Split by spaces to get key=value pairs or standalone tags
         pairs = meta_str.split()
+        if not pairs:
+            raise ValueError("Metadata block is empty or malformed.")
         for pair in pairs:
             if '=' in pair:
                 key, val = pair.split('=', 1)
+                if not key or not val:
+                    raise ValueError(f"Invalid metadata entry '{pair}'. "
+                                     "Expected key=value format.")
+                if key in meta_dict:
+                    raise ValueError(f"Duplicate metadata key '{key}'.")
                 meta_dict[key] = val
             else:
                 raise ValueError(f"Invalid metadata entry '{pair}'. "
@@ -73,6 +80,10 @@ class Parser:
 
             # Process Metadata
             meta = Parser._parse_metadata(meta_str)
+            valid_keys = {"zone", "max_drones", "color"}
+            if not meta.keys() <= valid_keys:
+                raise ValueError("Unknown metadata keys in zone definition:"
+                                 f" {meta.keys() - valid_keys}")
 
             # Parse Zone Type
             z_type_str = meta.get("zone", "normal")
@@ -84,11 +95,14 @@ class Parser:
                                  "or priority.")
 
             # Parse Max Drones
-            max_drones = int(meta.get("max_drones", 1))
-            if max_drones <= 0:
+            try:
+                max_drones = int(meta.get("max_drones", 1))
+                if max_drones <= 0:
+                    raise ValueError
+            except ValueError:
                 raise ValueError("max_drones must be a positive integer.")
 
-            color = meta.get("color", None)
+            color = meta.get("color", "white")
 
             # Create and register Zone
             zone = Zone(name, x, y, z_type, max_drones, color)
@@ -126,8 +140,16 @@ class Parser:
 
             # Process Metadata
             meta = Parser._parse_metadata(meta_str)
-            capacity = int(meta.get("max_link_capacity", 1))
-            if capacity <= 0:
+            valid_keys = {"max_link_capacity"}
+            if not meta.keys() <= valid_keys:
+                raise ValueError("Unknown metadata keys in connection "
+                                 f"definition: {meta.keys() - valid_keys}")
+
+            try:
+                capacity = int(meta.get("max_link_capacity", 1))
+                if capacity <= 0:
+                    raise ValueError
+            except ValueError:
                 raise ValueError("max_link_capacity must be a "
                                  "positive integer.")
 
