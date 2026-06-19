@@ -37,6 +37,8 @@ class TimeSpaceAStar:
             current_zone, dist = queue.pop(0)
             for conn in self.network.graph[current_zone.name]:
                 neighbor = conn.get_opposite(current_zone)
+                if neighbor.type == ZoneType.BLOCKED:
+                    continue
                 cost = 2 if current_zone.type == ZoneType.RESTRICTED else 1
                 if (neighbor.name not in heuristics or
                         heuristics[neighbor.name] > cost + dist):
@@ -65,13 +67,7 @@ class TimeSpaceAStar:
         Finds a Time-Space path for a single drone and reserves it.
         Returns True if successful.
         """
-        # Ensure we have a valid start zone (drone may not be placed yet)
-        if drone.current_zone is not None:
-            start_zone = drone.current_zone
-        elif self.network.start_hub is not None:
-            start_zone = self.network.start_hub
-        else:
-            return False
+        start_zone = drone.current_zone
         end_zone = self.network.end_hub
 
         # Unique sequence count for tie-breaking
