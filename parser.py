@@ -25,7 +25,8 @@ class Parser:
         # Split by spaces to get key=value pairs or standalone tags
         pairs = meta_str.split()
         if not pairs:
-            raise ValueError("Metadata block is empty or malformed.")
+            raise ValueError("Metadata block is empty or malformed "
+                             f"'{meta_str}'.")
         for pair in pairs:
             if '=' in pair:
                 key, val = pair.split('=', 1)
@@ -53,7 +54,8 @@ class Parser:
         if line.startswith("nb_drones:"):
             parts = line.split(":")
             if len(parts) != 2:
-                raise ValueError("Invalid nb_drones format.")
+                raise ValueError("Invalid nb_drones format. "
+                                 "Expected 'nb_drones: <count>'.")
             count = int(parts[1].strip())
             if count <= 0:
                 raise ValueError("nb_drones must be a positive integer.")
@@ -69,7 +71,9 @@ class Parser:
         elif line.startswith(("start_hub:", "end_hub:", "hub:")):
             match = self.zone_pattern.match(line)
             if not match:
-                raise ValueError("Invalid zone format.")
+                raise ValueError("Invalid zone format. Expected "
+                                 "'start_hub|end_hub|hub:"
+                                 " <name> <x> <y> [metadata]'.")
 
             h_type, name, x_str, y_str, meta_str = match.groups()
 
@@ -97,7 +101,7 @@ class Parser:
             # Parse Max Drones
             try:
                 max_drones = int(meta.get("max_drones", 1))
-                if max_drones <= 0:
+                if max_drones < 0:
                     raise ValueError
             except ValueError:
                 raise ValueError("max_drones must be a positive integer.")
@@ -122,8 +126,8 @@ class Parser:
         elif line.startswith("connection:"):
             match = self.conn_pattern.match(line)
             if not match:
-                raise ValueError("Invalid connection format. "
-                                 "Check for dashes in names.")
+                raise ValueError("Invalid connection format. Expected "
+                                 "'connection: <zone1>-<zone2> [metadata]'.")
 
             name1, name2, meta_str = match.groups()
 
@@ -177,6 +181,12 @@ class Parser:
 
         except FileNotFoundError:
             print(f"Error: File '{filepath}' not found.")
+            sys.exit(1)
+        except PermissionError:
+            print(f"Error: Permission denied for file '{filepath}'.")
+            sys.exit(1)
+        except IOError as e:
+            print(f"Error reading file '{filepath}': {e}")
             sys.exit(1)
 
         # 5. Final Validations
