@@ -1,7 +1,7 @@
 MAP = maps/easy/01_linear_path.txt
 
 install:
-	pip install -r requirements.txt
+	pip install --upgrade -r requirements.txt
 
 run:
 	python3 main.py $(MAP)
