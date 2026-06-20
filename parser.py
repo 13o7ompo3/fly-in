@@ -16,12 +16,14 @@ class Parser:
         """Prepare the parser and its compiled regular expressions."""
         self.network = Network()
         self.nb_drones_found = False
-        self.zone_pattern = re.compile(r"^(start_hub|end_hub|hub):"
-                                       r"\s+([^\s\-]+)\s+(-?\d+)\s+(-?\d+)"
-                                       r"(?:\s+\[([^\]]+)\])?$")
-        self.conn_pattern = re.compile(r"^connection:"
-                                       r"\s+([^\s\-]+)-([^\s\-]+)"
-                                       r"(?:\s+\[([^\]]+)\])?$")
+        self.zone_pattern = re.compile(
+            r"^(start_hub|end_hub|hub):"
+            r"\s+([^\s\-]+)\s+([-+]?\d+)\s+([-+]?\d+)"
+            r"(?:\s+\[([^\]]+)\])?$")
+        self.conn_pattern = re.compile(
+            r"^connection:"
+            r"\s+([^\s\-]+)-([^\s\-]+)"
+            r"(?:\s+\[([^\]]+)\])?$")
 
     @staticmethod
     def _parse_metadata(meta_str: Optional[str]) -> Dict[str, str]:
@@ -101,6 +103,10 @@ class Parser:
                 raise ValueError(f"Duplicate zone name '{name}'.")
 
             x, y = int(x_str), int(y_str)
+            if (x, y) in network._seen_coordinates:
+                raise ValueError(f"Duplicate coordinates ({x}, {y}) "
+                                 f"for zone '{name}'.")
+            network._seen_coordinates.add((x, y))
 
             # Process Metadata
             meta = Parser._parse_metadata(meta_str)

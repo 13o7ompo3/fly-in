@@ -97,3 +97,4 @@ class Network:
         self.end_hub: Optional[Zone] = None
         self.drones: List[Drone] = []
         self._seen_connections: Set[Tuple[str, str]] = set()
+        self._seen_coordinates: Set[Tuple[int, int]] = set()
