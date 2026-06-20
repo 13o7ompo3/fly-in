@@ -99,12 +99,14 @@ The simulation logs progress to the terminal, one line per turn, with color-code
 
 ### Sample Run
 
-D1-$\textcolor{blue}{\text{waypoint1}}$\
-D1-$\textcolor{blue}{\text{waypoint2}}$ D2-$\textcolor{blue}{\text{waypoint1}}$\
-D1-$\textcolor{red}{\text{goal}}$ D2-$\textcolor{blue}{\text{waypoint2}}$\
-D2-$\textcolor{red}{\text{goal}}$
+```
+D1-waypoint1
+D1-waypoint2 D2-waypoint1
+D1-goal D2-waypoint2
+D2-goal
 
-$\textcolor{green}{\text{Simulation complete in 4 turns.}}$
+Simulation complete in 4 turns.
+```
 
 ## Resources
 
