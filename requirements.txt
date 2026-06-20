@@ -1,0 +1,3 @@
+webcolors
+flake8
+mypy
