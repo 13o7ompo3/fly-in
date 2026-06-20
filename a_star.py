@@ -5,28 +5,46 @@ from structure import Network, Zone, Connection, ZoneType, Drone
 
 
 class PathNotFoundException(Exception):
-    """Raised when no valid path can be found for a drone."""
-    pass
+    """Raised when no valid time-space path exists for a drone."""
 
 
 # path is a list of tuples: (turn_reached, zone_or_connection)
 PathElement: TypeAlias = Zone | Connection
 Path: TypeAlias = List[Tuple[int, PathElement]]
 
-# Queue: (f_score, priority, turn, zone_name, current_zone, path, reservations)
-HeapElement: TypeAlias = Tuple[int | float, int, int | float, int,
-                               int, Zone, Path, Path]
+# (f_score, priority, h_score, turn, tiebreaker, curr_zone, path, reservations)
+# f_score = g_score + h_score (g_score = turn, h_score = distance to goal)
+HeapElement: TypeAlias = Tuple[
+    int | float, int, int | float, int, int, Zone, Path, Path]
 
 
 class TimeSpaceAStar:
+    """Time-space A* solver for routing multiple drones.
+
+    The implementation reserves time-indexed occupancy and link
+    schedules on successful path allocation.
+    """
+
     def __init__(self, network: Network) -> None:
+        """Initialize solver and precompute heuristics.
+
+        Args:
+            network: Network model with zones and connections.
+        """
         self.network = network
         # Precompute heuristic: shortest distance from any node to
         # the end_hub ignoring capacities
         self.heuristic_map: Dict[str, int] = self._compute_heuristics()
 
     def _compute_heuristics(self) -> Dict[str, int]:
-        """BFS to compute minimum turns to reach end_hub."""
+        """Compute shortest unconstrained distance to the end hub.
+
+        Uses a BFS over the static graph and assigns a cost of 2 when
+        traversing from a restricted zone, otherwise 1.
+
+        Returns:
+            Mapping of zone name to minimal heuristic distance.
+        """
         if self.network.end_hub is None:
             return {}
 
@@ -47,7 +65,14 @@ class TimeSpaceAStar:
         return heuristics
 
     def _can_enter_zone(self, zone: Zone, turn: int) -> bool:
-        """Check if a zone has capacity at a specific turn."""
+        """
+        Args:
+            zone: Zone object to check.
+            turn: Turn index to query.
+        Return True if `zone` has capacity at `turn`.
+
+        Start and end hubs are treated as unlimited.
+        """
         if zone.type == ZoneType.BLOCKED:
             return False
         if (zone == self.network.end_hub or
@@ -56,16 +81,21 @@ class TimeSpaceAStar:
         current_occupancy = zone.occupancy_schedule.get(turn, 0)
         return current_occupancy < zone.max_drones
 
-    def _can_use_connection(
-            self, conn: Connection, turn: int) -> bool:
-        """Check if a connection has capacity at a specific turn."""
+    def _can_use_connection(self, conn: Connection, turn: int) -> bool:
+        """
+        Args:
+            conn: Connection object to check.
+            turn: Turn index to query.
+        Return True if `conn` has available capacity at `turn`.
+        """
         current_usage = conn.link_schedule.get(turn, 0)
         return current_usage < conn.capacity
 
     def find_path(self, drone: Drone) -> bool:
-        """
-        Finds a Time-Space path for a single drone and reserves it.
-        Returns True if successful.
+        """Find and reserve a time-space path for `drone`.
+        Args:
+            drone: Drone object to find path for.
+        Returns True on success and reserves occupancy/link tables.
         """
         start_zone = drone.current_zone
         end_zone = self.network.end_hub
@@ -100,6 +130,7 @@ class TimeSpaceAStar:
             if current_zone == end_zone:
                 self._reserve_path(drone, path, reservations)
                 return True
+
             if (current_zone.name, current_turn) in closed_set:
                 continue
             closed_set.add((current_zone.name, current_turn))
@@ -119,18 +150,21 @@ class TimeSpaceAStar:
                     wait_priority -= 1
                 heapq.heappush(
                     open_set,
-                    (next_turn + h_score, wait_priority,
-                     h_score, next_turn,
-                     next(tiebreaker), current_zone,
-                     wait_path, wait_res),
+                    (
+                        next_turn + h_score,
+                        wait_priority,
+                        h_score,
+                        next_turn,
+                        next(tiebreaker),
+                        current_zone,
+                        wait_path,
+                        wait_res
+                    )
                 )
             # Option 2: Move to adjacent zones
             for conn in self.network.graph[current_zone.name]:
                 neighbor = conn.get_opposite(current_zone)
-                if neighbor is None:
-                    continue
-
-                if neighbor.type == ZoneType.BLOCKED:
+                if neighbor is None or neighbor.type == ZoneType.BLOCKED:
                     continue
 
                 if neighbor.type == ZoneType.RESTRICTED:
@@ -149,15 +183,22 @@ class TimeSpaceAStar:
                         move_res.append((current_turn + 1, conn))
                         move_res.append((arrival_turn, conn))
                         move_res.append((arrival_turn, neighbor))
+
                         h_score = self.heuristic_map.get(
                             neighbor.name, float('inf')
                         )
                         heapq.heappush(
                             open_set,
-                            (arrival_turn + h_score, priority,
-                             h_score, arrival_turn,
-                             next(tiebreaker), neighbor,
-                             move_path, move_res),
+                            (
+                                arrival_turn + h_score,
+                                priority,
+                                h_score,
+                                arrival_turn,
+                                next(tiebreaker),
+                                neighbor,
+                                move_path,
+                                move_res,
+                            ),
                         )
                 else:
                     arrival_turn = current_turn + 1
@@ -171,28 +212,38 @@ class TimeSpaceAStar:
                         move_res = list(reservations)
                         move_res.append((arrival_turn, conn))
                         move_res.append((arrival_turn, neighbor))
-                        h_score = (
-                            self.heuristic_map.get(neighbor.name, float('inf'))
+
+                        h_score = self.heuristic_map.get(
+                            neighbor.name, float('inf')
                         )
                         move_priority = priority
                         if neighbor.type == ZoneType.PRIORITY:
                             move_priority -= 1
+
                         heapq.heappush(
                             open_set,
-                            (arrival_turn + h_score, move_priority,
-                             h_score, arrival_turn,
-                             next(tiebreaker), neighbor,
-                             move_path, move_res),
+                            (
+                                arrival_turn + h_score,
+                                move_priority,
+                                h_score,
+                                arrival_turn,
+                                next(tiebreaker),
+                                neighbor,
+                                move_path,
+                                move_res,
+                            ),
                         )
         return False
 
     def _reserve_path(
-        self,
-        drone: Drone,
-        path: Path,
-        reservations: Path,
+        self, drone: Drone, path: Path, reservations: Path
     ) -> None:
-        """Applies the successful path to the network's reservation tables."""
+        """Reserve zones and links according to `reservations`.
+
+        The reservations list contains tuples (turn, element) where
+        element is either a `Zone` or a `Connection` and the schedules
+        are incremented accordingly.
+        """
         drone.path = path
         for turn, element in reservations:
             if isinstance(element, Zone):
@@ -205,7 +256,11 @@ class TimeSpaceAStar:
                 )
 
     def solve(self) -> None:
-        """Find paths for all drones in the network."""
+        """Compute routes for all drones, raising on failure.
+
+        Raises:
+            PathNotFoundException: If any drone cannot be routed.
+        """
         for drone in self.network.drones:
             if not self.find_path(drone):
                 raise PathNotFoundException(

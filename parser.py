@@ -5,7 +5,15 @@ from structure import ZoneType, Zone, Connection, Drone, Network
 
 
 class Parser:
+    """Parse text map definitions into a `Network` object.
+
+    The parser enforces a compact DSL of zone and connection
+    declarations. It raises `ValueError` on malformed lines and
+    exits the program on file I/O failures.
+    """
+
     def __init__(self) -> None:
+        """Prepare the parser and its compiled regular expressions."""
         self.network = Network()
         self.nb_drones_found = False
         self.zone_pattern = re.compile(r"^(start_hub|end_hub|hub):"
@@ -17,12 +25,18 @@ class Parser:
 
     @staticmethod
     def _parse_metadata(meta_str: Optional[str]) -> Dict[str, str]:
-        """Parses the optional metadata block into a dictionary."""
+        """Parses the optional metadata block into a dictionary.
+        Args:
+            meta_str: The metadata string to parse.
+        Returns:
+            A dictionary containing the parsed metadata.
+        Raises:
+            ValueError: If the metadata is malformed or contains duplicates.
+        """
         meta_dict: Dict[str, str] = {}
         if not meta_str:
             return meta_dict
 
-        # Split by spaces to get key=value pairs or standalone tags
         pairs = meta_str.split()
         if not pairs:
             raise ValueError("Metadata block is empty or malformed "
@@ -42,7 +56,13 @@ class Parser:
         return meta_dict
 
     def parse_line(self, line: str) -> None:
-        """Parses a single line of the input file."""
+        """Parses a single line of the input file.
+        Args:
+            line: A single line from the map definition file.
+        Raises:
+            ValueError: If the line is malformed or contains invalid data.
+        The method updates `self.network` in place.
+        """
         network = self.network
 
         # 1. Strip comments and whitespace
@@ -168,7 +188,17 @@ class Parser:
             raise ValueError("Unknown directive.")
 
     def parse_file(self, filepath: str) -> Network:
-
+        """Parse the entire map definition file into a `Network`.
+        Args:
+            filepath: Path to the map definition file.
+        Returns:
+            A fully populated `Network` object.
+        Raises:
+            FileNotFoundError: If the file does not exist.
+            PermissionError: If the file cannot be read due to permissions.
+            IOError: For other I/O related errors.
+            ValueError: For any parsing errors in the file content.
+        """
         try:
             with open(filepath, 'r') as f:
                 for line_num, line in enumerate(f, 1):

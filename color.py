@@ -3,8 +3,26 @@ import webcolors  # type: ignore
 
 
 class Color:
+    """Helpers for mapping color names and formatting text.
+
+    Methods operate on simple string inputs and return formatted
+    strings suitable for terminal rendering.
+    """
+
     @staticmethod
     def get_color(color_name: str) -> str:
+        """Return a CSS3 hex code for a color name.
+
+        If the name is not an exact CSS3 match, a deterministic MD5
+        hash is converted to a target RGB and the nearest CSS3 color
+        is selected by Euclidean distance.
+
+        Args:
+            color_name: Arbitrary color identifier.
+
+        Returns:
+            A hex color code such as '#rrggbb'.
+        """
         clean_name = str(color_name).strip().lower()
 
         # 1. Direct matching check
@@ -44,7 +62,16 @@ class Color:
 
     @staticmethod
     def colored_text_from_hex_codes(text: str, hex_codes: list[str]) -> str:
-        rgb_values = [webcolors.hex_to_rgb(hex_code) for hex_code in hex_codes]
+        """Apply hex color codes to `text` using ANSI escape codes.
+
+        Args:
+            text: The text to colorize.
+            hex_codes: Sequence of hex color codes to apply.
+
+        Returns:
+            The text annotated with ANSI escape sequences.
+        """
+        rgb_values = [webcolors.hex_to_rgb(hc) for hc in hex_codes]
         if len(rgb_values) == 1:
             rgb = rgb_values[0]
             return f"\033[38;2;{rgb.red};{rgb.green};{rgb.blue}m{text}\033[0m"
@@ -57,5 +84,14 @@ class Color:
 
     @staticmethod
     def colored_text(text: str, color_names: list[str]) -> str:
+        """Map color names to hex codes and colorize `text`.
+
+        Args:
+            text: The text to colorize.
+            color_names: Color names to resolve and apply.
+
+        Returns:
+            The ANSI-colorized string.
+        """
         hex_codes = [Color.get_color(name) for name in color_names]
         return Color.colored_text_from_hex_codes(text, hex_codes)

@@ -1,4 +1,4 @@
-MAP := map/easy/01_linear_path.txt
+MAP = maps/easy/01_linear_path.txt
 
 install:
 	pip install -r requirements.txt

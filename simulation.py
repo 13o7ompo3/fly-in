@@ -3,7 +3,18 @@ from color import Color
 
 
 class Simulator:
+    """Execute and render the solved drone schedules.
+
+    The simulator expects a `Network` instance where drones have their
+    `path` attribute populated by the solver.
+    """
+
     def __init__(self, network: Network) -> None:
+        """Initialize with a parsed and solved `Network`.
+
+        Args:
+            network: Parsed network with solved drone paths.
+        """
         self.network = network
         # Find the absolute maximum turn reached by any drone
         self.max_turns = max(
@@ -11,15 +22,33 @@ class Simulator:
             for drone in self.network.drones
         )
 
-    def _get_entity_at_turn(self, drone: Drone, turn: int
-                            ) -> Zone | Connection:
-        """Retrieves exactly where a drone is at a specific turn."""
+    def _get_entity_at_turn(
+        self, drone: Drone, turn: int
+    ) -> Zone | Connection:
+        """Return the zone or connection where `drone` is at `turn`.
+
+        If `turn` is beyond the provided path, the last entry is used.
+
+        Args:
+            drone: Drone object containing `path` entries.
+            turn: Turn index to query.
+
+        Returns:
+            The `Zone` or `Connection` instance for that turn.
+        """
         if turn >= len(drone.path):
             turn = -1
         return drone.path[turn][1]
 
     def _get_colored_name(self, entity: Zone | Connection) -> str:
-        """Returns the entity's name wrapped in its designated ANSI color."""
+        """Format the readable name of `entity` with ANSI colors.
+
+        Args:
+            entity: A `Zone` or `Connection` instance.
+
+        Returns:
+            A display string potentially wrapped in ANSI codes.
+        """
         if isinstance(entity, Zone):
             name = entity.name
             color = entity.color if entity.color else "white"
@@ -34,7 +63,11 @@ class Simulator:
             f"{self._get_colored_name(entity.zone_b)}"
 
     def run(self) -> None:
-        """Executes the simulation turn-by-turn and prints the output."""
+        """Print turn-by-turn movements for all drones.
+
+        Movement lines follow the format `DroneId-Location` and are
+        printed only when a drone changes its occupied entity.
+        """
         for turn in range(1, self.max_turns + 1):
             turn_moves = []
             for drone in self.network.drones:

@@ -5,6 +5,11 @@ from simulation import Simulator
 
 
 def main() -> None:
+    """Parse the map, run the solver, and play the simulation.
+
+    Exits with code 1 on usage or runtime failures. The single
+    positional argument is the path to the map definition file.
+    """
     if len(sys.argv) != 2:
         print("Usage: python main.py <map_file.txt>")
         sys.exit(1)
