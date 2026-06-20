@@ -1,6 +1,6 @@
 
 
-def main(file_name: str, number_zones: int):
+def main(file_name: str, number_zones: int) -> None:
     output = "nb_drones: 1\n"
     output += "\n"
     output += "start_hub: start 0 0 [color=green]\n"
