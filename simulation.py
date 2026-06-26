@@ -68,6 +68,7 @@ class Simulator:
         Movement lines follow the format `DroneId-Location` and are
         printed only when a drone changes its occupied entity.
         """
+        total_moves = 0
         for turn in range(1, self.max_turns + 1):
             turn_moves = []
             for drone in self.network.drones:
@@ -78,5 +79,15 @@ class Simulator:
                     turn_moves.append(f"{drone.id}-{dest_name}")
             if turn_moves:
                 print(" ".join(turn_moves))
+                total_moves += len(turn_moves)
         print(Color.colored_text("\nSimulation complete in "
                                  f"{self.max_turns} turns.", ["green"]))
+        print(Color.colored_text(f"Total moves: {total_moves}", ["green"]))
+        print(Color.colored_text(
+            "The average number of moves per turn: "
+            f"{total_moves / self.max_turns:.2f}",
+            ["green"]))
+        print(Color.colored_text(
+            "The average number of moves per drone: "
+            f"{total_moves/len(self.network.drones):.2f}",
+            ["green"]))

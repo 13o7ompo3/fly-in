@@ -106,6 +106,9 @@ D1-goal D2-waypoint2
 D2-goal
 
 Simulation complete in 4 turns.
+Total moves: 6
+The average number of moves per turn: 1.50
+The average number of moves per drone: 3.00
 ```
 
 ## Resources
