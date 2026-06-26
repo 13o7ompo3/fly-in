@@ -78,8 +78,11 @@ class Parser:
             if len(parts) != 2:
                 raise ValueError("Invalid nb_drones format. "
                                  "Expected 'nb_drones: <count>'.")
-            count = int(parts[1].strip())
-            if count <= 0:
+            try:
+                count = int(parts[1].strip())
+                if count <= 0:
+                    raise ValueError
+            except ValueError:
                 raise ValueError("nb_drones must be a positive integer.")
             for i in range(1, count + 1):
                 network.drones.append(Drone(f"D{i}"))
@@ -127,7 +130,7 @@ class Parser:
             # Parse Max Drones
             try:
                 max_drones = int(meta.get("max_drones", 1))
-                if max_drones < 0:
+                if max_drones <= 0:
                     raise ValueError
             except ValueError:
                 raise ValueError("max_drones must be a positive integer.")
@@ -224,6 +227,9 @@ class Parser:
         except IOError as e:
             print(f"Error reading file '{filepath}': {e}")
             sys.exit(1)
+        except Exception as e:
+            print(f"Unexpected error while parsing file '{filepath}': {e}")
+            sys.exit(1)
 
         # 5. Final Validations
         if not self.nb_drones_found:
@@ -234,6 +240,9 @@ class Parser:
             sys.exit(1)
         if self.network.end_hub is None:
             print("Parsing error: Missing end_hub.")
+            sys.exit(1)
+        if not all(self.network.graph.values()):
+            print("Parsing error: Some zones have no connections.")
             sys.exit(1)
 
         # 6. Initialize drone positions
