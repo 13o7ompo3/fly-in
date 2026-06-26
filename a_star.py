@@ -45,7 +45,8 @@ class TimeSpaceAStar:
         Returns:
             Mapping of zone name to minimal heuristic distance.
         """
-        if self.network.end_hub is None:
+        if (self.network.end_hub is None
+           or self.network.end_hub.type == ZoneType.BLOCKED):
             return {}
 
         heuristics: Dict[str, int] = {self.network.end_hub.name: 0}
@@ -238,11 +239,13 @@ class TimeSpaceAStar:
     def _reserve_path(
         self, drone: Drone, path: Path, reservations: Path
     ) -> None:
-        """Reserve zones and links according to `reservations`.
+        """Reserve zones and links according to `reservations`
+        and assign `path` to `drone`.
 
-        The reservations list contains tuples (turn, element) where
-        element is either a `Zone` or a `Connection` and the schedules
-        are incremented accordingly.
+        Args:
+            drone: Drone object to assign path to.
+            path: List of tuples representing the path.
+            reservations: List of tuples representing the reservations.
         """
         drone.path = path
         for turn, element in reservations:
